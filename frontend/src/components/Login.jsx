@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { PawPrint, ArrowLeft, Mail, Lock, User } from 'lucide-react';
 
 export function Login({ onBack, onLogin }) {
@@ -51,7 +51,8 @@ export function Login({ onBack, onLogin }) {
           <p className="text-sm text-slate-500 mt-1">Ingresa o regístrate para gestionar tus citas</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Agregamos autoComplete="off" en el form principal para mayor seguridad */}
+        <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Nombre completo</label>
             <div className="relative">
@@ -62,6 +63,7 @@ export function Login({ onBack, onLogin }) {
                 placeholder="Tu Nombre"
                 value={nombre}
                 onChange={(e) => setNombre(e.target.value)}
+                autoComplete="off"
                 className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#FF6B4A] transition"
               />
             </div>
@@ -77,6 +79,7 @@ export function Login({ onBack, onLogin }) {
                 placeholder="tucorreo@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                autoComplete="off"
                 className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#FF6B4A] transition"
               />
             </div>
@@ -92,6 +95,7 @@ export function Login({ onBack, onLogin }) {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                autoComplete="new-password" 
                 className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#FF6B4A] transition"
               />
             </div>
