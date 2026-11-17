@@ -6,7 +6,10 @@ const bcrypt = require('bcryptjs');
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+
+// 🚀 IMPORTANTE: Aumentamos el límite de tamaño a 10MB para aceptar imágenes en Base64 desde el dispositivo
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 const PORT = process.env.PORT || 3000;
 
@@ -47,7 +50,6 @@ app.post('/api/login', async (req, res) => {
     if (usuarios.length > 0) {
       const userRecord = usuarios[0];
       
-      // Comparamos la contraseña ingresada con el hash guardado de forma segura
       const passwordMatch = await bcrypt.compare(password, userRecord.password_hash);
       if (!passwordMatch) {
         return res.status(401).json({ success: false, message: 'Contraseña incorrecta.' });
@@ -57,7 +59,6 @@ app.post('/api/login', async (req, res) => {
       nombreUsuario = userRecord.nombre;
       rolUsuario = userRecord.rol;
     } else {
-      // Si no existe, lo registramos cifrando su contraseña y asignando rol 'CLIENTE'
       const negocioIdDefault = 1; 
       const salt = await bcrypt.genSalt(10);
       const passwordHash = await bcrypt.hash(password, salt);
@@ -78,7 +79,7 @@ app.post('/api/login', async (req, res) => {
         id: usuarioId,
         name: nombreUsuario,
         email: email,
-        rol: rolUsuario, // Permite validar en el frontend si puede editar o no
+        rol: rolUsuario,
         avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200'
       }
     });
@@ -86,6 +87,65 @@ app.post('/api/login', async (req, res) => {
   } catch (error) {
     console.error('Error en base de datos:', error);
     res.status(500).json({ success: false, message: 'Error interno en la base de datos' });
+  }
+});
+
+// 1. Obtener datos del negocio y sus servicios
+app.get('/api/home-data', async (req, res) => {
+  try {
+    const [negocios] = await pool.query('SELECT * FROM negocios WHERE id = 1');
+    const [servicios] = await pool.query('SELECT * FROM servicios WHERE negocio_id = 1');
+    
+    res.json({
+      success: true,
+      negocio: negocios[0] || {},
+      servicios: servicios
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error al obtener datos' });
+  }
+});
+
+// 2. Actualizar información general del negocio (Logo, Imágenes, Slogan, Horarios, etc.)
+app.put('/api/negocio/1', async (req, res) => {
+  const { nombre, slogan, logo_url, imagen_principal, horarios } = req.body;
+  try {
+    await pool.query(
+      'UPDATE negocios SET nombre = ?, slogan = ?, logo_url = ?, imagen_principal = ?, horarios = ? WHERE id = 1',
+      [nombre, slogan, logo_url, imagen_principal, horarios]
+    );
+    res.json({ success: true, message: 'Negocio actualizado correctamente.' });
+  } catch (error) {
+    console.error('Error al actualizar negocio:', error);
+    res.status(500).json({ success: false, message: 'Error en la base de datos' });
+  }
+});
+
+// 3. Crear un nuevo servicio
+app.post('/api/servicios', async (req, res) => {
+  const { nombre, categoria, precio, duracion_estimada } = req.body;
+  const negocioIdDefault = 1;
+
+  try {
+    const [result] = await pool.query(
+      'INSERT INTO servicios (negocio_id, nombre, categoria, precio, duracion_estimada) VALUES (?, ?, ?, ?, ?)',
+      [negocioIdDefault, nombre, categoria, precio, duracion_estimada]
+    );
+    res.json({ success: true, message: 'Servicio creado con éxito', id: result.insertId });
+  } catch (error) {
+    console.error('Error al crear servicio:', error);
+    res.status(500).json({ success: false, message: 'Error al guardar el servicio' });
+  }
+});
+
+// 4. Eliminar un servicio
+app.delete('/api/servicios/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await pool.query('DELETE FROM servicios WHERE id = ?', [id]);
+    res.json({ success: true, message: 'Servicio eliminado' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error al eliminar el servicio' });
   }
 });
 
